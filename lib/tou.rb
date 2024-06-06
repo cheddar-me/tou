@@ -1,20 +1,29 @@
 require "tou/version"
+require "securerandom"
 
-# Create a 16 byte random bytestring with the first 6 bytes having the current timestamp encoded
-# Usage:
-# uuid_bytes_to_s(generate_time_ordered_uuid_bytes)
-module TimeEncodedUUID
-  def self.generate_time_ordered_uuid_bytes
-    # multiply by 1_000_000 so we have enough resolution to make the timestamp increment for every transaction
-    epoch_micros = (Time.now.to_f * 1_000_000).round
+# A generator for time-ordered UUIDs
+module Tou
+  autoload :VERSION, __dir__ + "/tou/version.rb"
+  autoload :Generator, __dir__ + "/tou/generator.rb"
+  # Generates the bag of 16 bytes with UUID in binary form. This is not the
+  # canonical representation but can be converted into one.
+  #
+  # @param random[#bytes] Source of randomness. Normally SecureRandom will be used, but it can be
+  #   replaced by a mock or a `Random` object with a known seed, for testing or speed.
+  # @param time[#to_f] A time value that is convertible to a floating-point number of seconds since epoch
+  # @return [String] in binary encoding
+  def self.uuid_bytes(random: SecureRandom, time: Time.now)
+    # Use microseconds for the timestamp
+    epoch_micros = (time.to_f * 1_000_000).round
     # Encode an 8-byte unsigned big-endian uint, and skip the first byte since it's 0, so we're left with 7 bytes.
     # This will limit our timestamp to the year 4307.
     # Q> : 64 bit unsigned big-endian int
+    # We want more significant bytes first for better sorting in Postgres
     epoch_micros_unsigned_uint_bytes = [epoch_micros].pack("Q>")[1..]
     ts_bytes = epoch_micros_unsigned_uint_bytes
 
-    # Geneate the remaining 10 bytes randomly
-    byte_str = ts_bytes + SecureRandom.random_bytes(16 - ts_bytes.bytesize)
+    # Use the remaining bytes for randomness
+    byte_str = ts_bytes + random.bytes(16 - ts_bytes.bytesize)
 
     # This last part encodes the version, the timecode and the variant.
     # To prevent we have a variant, 4 bits of random and then the timecode I move up the timecode 4 bits.
@@ -39,20 +48,19 @@ module TimeEncodedUUID
     byte_str
   end
 
-  # Format a 16 byte (random) bytestring to the uuid style we know
-  def self.uuid_bytes_to_s(uuid_bytes_str)
+  # Generates a time-ordered UUID formatted as a canonical UUID string. The generated UUID
+  # can be passed directly to inputs expecting a UUID (such as PostgreSQL columns)
+  #
+  # @return [String]
+  def self.uuid(**params_for_uuid_bytes)
     # N : 32 bit unsigned int
     # n : 16 bit unsigned int
     # This will separate the whole random bytestring into a couple groups
     # (as various sized integers) that match the uuid group size
     # so [32bit int, 16bit int, 16bit int, 16bit int, 16bit int, 32bit int]
     # Which then can be shown in hex into the string literal to make up the final uuid.
-    ary = uuid_bytes_str.unpack("NnnnnN")
+    ary = uuid_bytes(**params_for_uuid_bytes).unpack("NnnnnN")
     # format in hex notation with dashes
     "%08x-%04x-%04x-%04x-%04x%08x" % ary
-  end
-
-  def self.generate_uuid_v4
-    uuid_bytes_to_s(generate_time_ordered_uuid_bytes)
   end
 end
