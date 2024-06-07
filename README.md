@@ -2,7 +2,7 @@
 
 `Tou`, short for **Time-Ordered-UUID**, is a time-ordered unique identifier scheme. It produces bytes which are compatible with UUIDv4 - the most common UUID format at the moment. While it looks identical to a usual UUIDv4 and will be accepted by all the systems that accept those UUIDs, it has a number of useful properties:
 
-* It starts with the current number of microseconds, packed in big-endian byte order. This means that the UUIDs will sort by byte value in time-ascending order
+* It starts with the current number of microseconds, packed in network byte order. This means that the UUIDs will sort by byte value in time-ascending order
 * It uses 7 bytes of the whole number of microseconds out of 8, giving enough capacity until year 4253
 * The rest of the UUID is filled with random bits
 * The UUID still has the correct version (4) and variant (1) to be recognized as a UUIDv4
@@ -11,8 +11,10 @@ The usage of such UUIDs has some neat properties:
 
 * They sort better in databases using bytes for UUID storage. Iterative SELECTs on large datasets will be much more pleasant.
 * They will likely compose into more efficient B-trees in database indexes
-* They sort chronologically, allowing for some They sort better in databases using bytes for UUID storage. Iterative SELECTs on large datasets will be much more pleasant.
+* They sort chronologically
 * The timestamp can be reconstructed from the UUID, and stays relatively precise
+* Any system that accepts UUIDv4 identifiers will also accept Tou identifiers
+* ...which means that you do not need, say, Postgres extensions to use UUIDv7
 
 ## Usage
 
@@ -102,7 +104,7 @@ To install this gem onto your local machine, run `bundle exec rake install`. To 
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/julik/tou. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [code of conduct](https://github.com/julik/tou/blob/master/CODE_OF_CONDUCT.md).
+Bug reports and pull requests are welcome on GitHub at https://github.com/cheddar-me/tou. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [code of conduct](https://github.com/cheddar-me/tou/blob/master/CODE_OF_CONDUCT.md).
 
 
 ## License
@@ -111,4 +113,4 @@ The gem is available as open source under the terms of the [MIT License](https:/
 
 ## Code of Conduct
 
-Everyone interacting in the Tou project's codebases, issue trackers, chat rooms and mailing lists is expected to follow the [code of conduct](https://github.com/julik/tou/blob/master/CODE_OF_CONDUCT.md).
+Everyone interacting in the Tou project's codebases, issue trackers, chat rooms and mailing lists is expected to follow the [code of conduct](https://github.com/cheddar-me/tou/blob/master/CODE_OF_CONDUCT.md).
