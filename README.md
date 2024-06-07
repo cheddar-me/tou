@@ -22,24 +22,59 @@ Tou.uuid #=> "061a417b-0e60-4009-9822-72d241ef27d6"
 
 Not much to it, really.
 
-## Layout in storage/memory
+## Spec, layout in storage/memory
 
 The Tou is laid out as follows (in its byte representation):
 
 ```
-| 0 | 1 | 2 | 3 | 4 | 5 |    6    |      7     |     8     | 9 | 10 | 11 | 12 | 13 | 14 | 15 |
-|           µs          |4   |   µs      | rnd |10|               rnd                        |
+ 0                   1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                               mus                             |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|          mus                  |  ver  |  mus  |   random      |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|var|                       random                              |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                           random                              |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+
+mus:
+   56-bit big-endian unsigned number of the Unix Epoch timestamp in
+   microseconds. Occupies bits 0 through 47 (octets 0-5) and bits 52
+   through 57 (octet 6).
+
+ver:
+   The 4-bit version field as defined by Section 4.2 of RFC9562,
+   set to 0b0100 (4). Occupies bits 48 through 51 of octet 6.
+
+random:
+   The 70 bits of pseudorandom data to provide uniqueness as
+   per Section 6.9 of RFC9562 and/or an optional counter to guarantee
+   additional monotonicity as per Section 6.2.  Occupies bits 66 through 127
+   (octets 8-15).
+
+var:
+   The 2-bit variant field as defined by Section 4.1 of RFC9562,
+   set to 0b10. Occupies bits 64 and 65 of octet 8.
+
 ```
 
-To generate a Tou:
+Compare this to the UUIDv4 layout:
 
 ```
-Take the whole number of microseconds since epoch, encode it as a big-endian unsigned long
-Remove the first byte of the encoded value
-Fill the rest of the 16 bytes with random bits
-Shift the last 4 bits of the timestamp of byte 6 right by 4 bits, to make space for the UUID version
-Overwrite the 4 bits where the version is supposed to be located with `100` (for "4")
-Overwrite 2 bits of byte 8 when 0-based with 10 for variant
+ 0                   1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                           random_a                            |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|          random_a             |  ver  |       random_b        |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|var|                       random_c                            |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                           random_c                            |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 ```
 
 ## Installation
