@@ -1,8 +1,46 @@
 # Tou
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/tou`. To experiment with that code, run `bin/console` for an interactive prompt.
+`Tou`, short for **Time-Ordered-UUID**, is a time-ordered unique identifier scheme. It produces bytes which are compatible with UUIDv4 - the most common UUID format at the moment. While it looks identical to a usual UUIDv4 and will be accepted by all the systems that accept those UUIDs, it has a number of useful properties:
 
-TODO: Delete this and the text above, and describe your gem
+* It starts with the current number of microseconds, packed in big-endian byte order. This means that the UUIDs will sort by byte value in time-ascending order
+* It uses 7 bytes of the whole number of microseconds out of 8, giving enough capacity until year 4253
+* The rest of the UUID is filled with random bits
+* The UUID still has the correct version (4) and variant (1) to be recognized as a UUIDv4
+
+The usage of such UUIDs has some neat properties:
+
+* They sort better in databases using bytes for UUID storage. Iterative SELECTs on large datasets will be much more pleasant.
+* They will likely compose into more efficient B-trees in database indexes
+* They sort chronologically, allowing for some They sort better in databases using bytes for UUID storage. Iterative SELECTs on large datasets will be much more pleasant.
+* The timestamp can be reconstructed from the UUID, and stays relatively precise
+
+## Usage
+
+```ruby
+Tou.uuid #=> "061a417b-0e60-4009-9822-72d241ef27d6"
+```
+
+Not much to it, really.
+
+## Layout in storage/memory
+
+The Tou is laid out as follows (in its byte representation):
+
+```
+| 0 | 1 | 2 | 3 | 4 | 5 |    6    |      7     |     8     | 9 | 10 | 11 | 12 | 13 | 14 | 15 |
+|           µs          |4   |   µs      | rnd |10|               rnd                        |
+```
+
+To generate a Tou:
+
+```
+Take the whole number of microseconds since epoch, encode it as a big-endian unsigned long
+Remove the first byte of the encoded value
+Fill the rest of the 16 bytes with random bits
+Shift the last 4 bits of the timestamp of byte 6 right by 4 bits, to make space for the UUID version
+Overwrite the 4 bits where the version is supposed to be located with `100` (for "4")
+Overwrite 2 bits of byte 8 when 0-based with 10 for variant
+```
 
 ## Installation
 
@@ -20,9 +58,6 @@ Or install it yourself as:
 
     $ gem install tou
 
-## Usage
-
-TODO: Write usage instructions here
 
 ## Development
 
