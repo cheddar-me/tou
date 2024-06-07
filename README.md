@@ -44,18 +44,19 @@ The Tou is laid out as follows (in its byte representation):
 
 mus:
    56-bit big-endian unsigned number of the Unix Epoch timestamp in
-   microseconds. Occupies bits 0 through 47 (octets 0-5) and bits 52
-   through 57 (octet 6).
+   microseconds. Occupies 48 bits (0 through 47 in octets 0-5) and
+   4 bits (53 through 57 in octet 6).
 
 ver:
    The 4-bit version field as defined by Section 4.2 of RFC9562,
-   set to 0b0100 (4). Occupies bits 48 through 51 of octet 6.
+   set to 0b0100 (4). Occupies bits 48 through 52.
 
 random:
    The 70 bits of pseudorandom data to provide uniqueness as
    per Section 6.9 of RFC9562 and/or an optional counter to guarantee
-   additional monotonicity as per Section 6.2.  Occupies bits 66 through 127
-   (octets 8-15).
+   additional monotonicity as per Section 6.2 of RFC9562. 
+   Occupies bits 49 through 63 and 66 through 127 of
+   octets 7 to 15 
 
 var:
    The 2-bit variant field as defined by Section 4.1 of RFC9562,
