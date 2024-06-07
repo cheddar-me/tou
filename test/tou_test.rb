@@ -28,7 +28,7 @@ class TouTest < Minitest::Test
     uids = 10.times.map { Tou.uuid }
     uids.each do |uid|
       # Assert 4 at the nibble position explicitly
-      assert_match /^[0-9a-f]{8}\-[0-9a-f]{4}\-4[0-9a-f]{3}\-[0-9a-f]{4}\-[0-9a-f]{12}$/, uid
+      assert_match(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[0-9a-f]{4}-[0-9a-f]{12}$/, uid)
     end
   end
 end

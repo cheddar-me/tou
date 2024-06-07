@@ -5,6 +5,7 @@ require "securerandom"
 module Tou
   autoload :VERSION, __dir__ + "/tou/version.rb"
   autoload :Generator, __dir__ + "/tou/generator.rb"
+
   # Generates the bag of 16 bytes with UUID in binary form. This is not the
   # canonical representation but can be converted into one.
   #
@@ -16,6 +17,7 @@ module Tou
     # Use microseconds for the timestamp
     epoch_micros = (time.to_f * 1_000_000).round
     # Encode an 8-byte unsigned big-endian uint, and skip the first byte since it's 0, so we're left with 7 bytes.
+    # This gives us sufficient timestamp resolution to last us into year
     # This will limit our timestamp to the year 4307.
     # Q> : 64 bit unsigned big-endian int
     # We want more significant bytes first for better sorting in Postgres
@@ -48,10 +50,13 @@ module Tou
     byte_str
   end
 
-  # Generates a time-ordered UUID formatted as a canonical UUID string. The generated UUID
-  # can be passed directly to inputs expecting a UUID (such as PostgreSQL columns)
+  # Generates the bag of 16 bytes with UUID in binary form. This the
+  # canonical representation but can be converted into one.
   #
-  # @return [String]
+  # @param random[#bytes] Source of randomness. Normally SecureRandom will be used, but it can be
+  #   replaced by a mock or a `Random` object with a known seed, for testing or speed.
+  # @param time[#to_f] A time value that is convertible to a floating-point number of seconds since epoch
+  # @return [String] in binary encoding
   def self.uuid(**params_for_uuid_bytes)
     # N : 32 bit unsigned int
     # n : 16 bit unsigned int
